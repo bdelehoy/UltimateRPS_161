@@ -123,8 +123,9 @@ GameObject:
   - component: {fileID: 210737086}
   - component: {fileID: 210737085}
   - component: {fileID: 210737084}
+  - component: {fileID: 210737087}
   m_Layer: 0
-  m_Name: Player2
+  m_Name: Player2_AI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -204,6 +205,17 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &210737087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 210737083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 711118ca2feaf60498f2cc9b9ebb7a2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &311517504
 GameObject:
   m_ObjectHideFlags: 0
@@ -271,6 +283,10 @@ MonoBehaviour:
   - {fileID: 0}
   playerOne: {fileID: 909323406}
   playerTwo: {fileID: 210737083}
+  movementMultiplier: 3
+  playerOneIndex: 3
+  playerTwoIndex: 4
+  gameOver: 0
 --- !u!4 &401028056
 Transform:
   m_ObjectHideFlags: 0
@@ -374,6 +390,7 @@ GameObject:
   - component: {fileID: 909323409}
   - component: {fileID: 909323408}
   - component: {fileID: 909323407}
+  - component: {fileID: 909323410}
   m_Layer: 0
   m_Name: Player1
   m_TagString: Untagged
@@ -455,6 +472,17 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &909323410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 909323406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd8f8a5bc9d6e9344bbe19a50e16ed0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1582138539
 GameObject:
   m_ObjectHideFlags: 0
