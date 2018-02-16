@@ -4,23 +4,27 @@ using UnityEngine;
 
 public class TimerScript : MonoBehaviour {
 	public float time = 0f;
+	private float timeResolution = 0.1f;
 
 	private IEnumerator StartCountdown() {
 		while(time > 0) {
-			time -= 0.1f;
-			yield return new WaitForSecondsRealtime(0.1f);
+			time -= timeResolution;
+			yield return new WaitForSecondsRealtime(timeResolution);
 		}
         gameObject.SetActive(false);
 	}
 
-	void OnEnable () {
-		time = 5f;
+	public void setTime(float newtime) {
+		time = newtime;
+	}
+
+	public void OnEnable () {
 		StartCoroutine(StartCountdown());
 	}
 
-	void OnDisable() {
+	public void OnDisable() {
 		time = 0f;
-		StopCoroutine("StartCountdown");
+		//StopCoroutine("StartCountdown");	// idk if this is doing anything but it's not broken
 	}
 	
 }

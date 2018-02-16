@@ -21,11 +21,16 @@ public class GameManager : MonoBehaviour {
     public int playerOneIndex = width - 1;
     public int playerTwoIndex = width;
 
-    public bool gameOver = false;
-    private enum Moves {NOMOVE, ROCK, PAPER, SCISSORS};
+    public float minTime = 2.0f;
+    public float maxTime = 7.0f;
+    public float reactionTime = 1.0f;
+    private float currentRoundTime;
 
+    public bool gameOver = false;
     private bool acceptingInputs = false;
     private bool endOfTurn = false;
+
+    private enum Moves {NOMOVE, ROCK, PAPER, SCISSORS};
     private int p1_move = 0;   // dummy: "player 1 hasn't made a move yet"
     private int p2_move = 0;   // dummy: "player 2 hasn't made a move yet"
 
@@ -35,7 +40,7 @@ public class GameManager : MonoBehaviour {
                                 { 1, 1, 0,-1},
                                 { 1,-1, 1, 0}};
 
-    // /////////////////////////////// //
+    ///////////////////////////////////
 
     private void Awake() {
         gameBoard[playerOneIndex] = playerOne;
@@ -58,14 +63,15 @@ public class GameManager : MonoBehaviour {
             //      calculate and display the result
             //      end the turn
             Debug.Log("--------ROUND STARTED!--------");
+            currentRoundTime = Random.Range(minTime, maxTime);
+            p1_move = p2_move = 0;
+            timerScript.setTime(currentRoundTime);
             timer.SetActive(true);
             acceptingInputs = true;
         }
         while(acceptingInputs) {
-            p1_move = 2;
             // new strategy: enable a separate InputManager object?
-            inputManager.SetActive(true);
-            StartCoroutine(PromptForMoves(5f));
+            StartCoroutine(Anticipation( currentRoundTime ));            
             acceptingInputs = false;
         }
         if(endOfTurn) {
@@ -78,15 +84,22 @@ public class GameManager : MonoBehaviour {
         }
 	}
 
-    private IEnumerator PromptForMoves(float seconds) {
-        // TODO
-        // this function should block the round from progressing until:
-        //      - player 1 provides an input, or:
-        //      - the timer runs out.
+    private IEnumerator Anticipation(float seconds) {
         while(true) {
-            p1_move = iScript.move;
+            Debug.Log("Waiting....");
             yield return new WaitForSecondsRealtime(seconds);
+            inputManager.SetActive(true);
+            StartCoroutine(PromptForMoves(reactionTime));
+        }
+    }
+
+    private IEnumerator PromptForMoves(float seconds) {
+        while(true) {
+            Debug.Log("NOW!");
+            p1_move = iScript.move;
             p2_move = playerTwoScript.GetMove();
+            yield return new WaitForSecondsRealtime(seconds);
+            // display "!" graphic
             endOfTurn = true;
         }
     }
