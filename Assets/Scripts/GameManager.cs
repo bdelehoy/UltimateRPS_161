@@ -10,10 +10,12 @@ public class GameManager : MonoBehaviour {
     public GameObject playerOne;
     public GameObject playerTwo;
     public GameObject timer;
+    public GameObject inputManager;
 
     private PlayerScript playerOneScript;
     private AIScript playerTwoScript;
     private TimerScript timerScript;
+    private InputScript iScript;
 
     public float movementMultiplier = 2;
     public int playerOneIndex = width - 1;
@@ -39,8 +41,9 @@ public class GameManager : MonoBehaviour {
         gameBoard[playerOneIndex] = playerOne;
         gameBoard[playerTwoIndex] = playerTwo;
         playerOneScript = playerOne.GetComponent<PlayerScript>();
-        playerTwoScript = playerTwo.GetComponent<AIScript>();   // CHANGE ME LATER!!!
-        timerScript = timer.GetComponent<TimerScript>();   // CHANGE ME LATER!!!
+        playerTwoScript = playerTwo.GetComponent<AIScript>();   // CHANGE ME LATER!!!  MAYBE!! (idk multiplayer looks scary)
+        timerScript = timer.GetComponent<TimerScript>();
+        iScript = inputManager.GetComponent<InputScript>();
         Debug.Log("Press V to start accepting input....");
     }
 
@@ -54,52 +57,56 @@ public class GameManager : MonoBehaviour {
             // after player 1 gives an input, or after the timer runs out:
             //      calculate and display the result
             //      end the turn
-            Debug.Log("ROUND STARTED!");
+            Debug.Log("--------ROUND STARTED!--------");
             timer.SetActive(true);
             acceptingInputs = true;
         }
         while(acceptingInputs) {
-            StartCoroutine(PromptForMoves());
+            p1_move = 2;
+            // new strategy: enable a separate InputManager object?
+            inputManager.SetActive(true);
+            StartCoroutine(PromptForMoves(5f));
             acceptingInputs = false;
         }
         if(endOfTurn) {
             StopAllCoroutines();    // dangerous.  but it works.
+            inputManager.SetActive(false);
             EndTurn();
-            Debug.Log("ROUND ENDED!");
+            Debug.Log("--------ROUND ENDED!--------");
             endOfTurn = false;
             CheckForWin();
         }
 	}
 
-    private IEnumerator PromptForMoves() {
+    private IEnumerator PromptForMoves(float seconds) {
         // TODO
         // this function should block the round from progressing until:
         //      - player 1 provides an input, or:
         //      - the timer runs out.
         while(true) {
-            yield return new WaitForSecondsRealtime(5);
-            Debug.Log("This printed 5 seconds after the timer started.");
+            p1_move = iScript.move;
+            yield return new WaitForSecondsRealtime(seconds);
             p2_move = playerTwoScript.GetMove();
             endOfTurn = true;
         }
     }
 
-    private void EndTurn() {        
+    private void EndTurn() {
         int result = ResolveMove(p1_move, p2_move);
         switch (result) {
             case -1:
                 // if player 2 wins, move both players left
-                Debug.Log("Player 2 wins this round!");
+                Debug.Log("----Player 2 wins this round!");
                 MovePlayersLeft();
                 break;
             case 0:
                 // if tie, nothing (unless powerups but ehhhh for now)
                 // play tie animation :^)
-                Debug.Log("TIE this round!");
+                Debug.Log("----TIE this round!");
                 break;
             case 1:
                 // if player 1 wins, move both players right
-                Debug.Log("Player 1 wins this round!");
+                Debug.Log("----Player 1 wins this round!");
                 MovePlayersRight();
                 break;
         }
