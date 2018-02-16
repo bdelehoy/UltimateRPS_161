@@ -19,17 +19,19 @@ public class GameManager : MonoBehaviour {
     public int playerOneIndex = width - 1;
     public int playerTwoIndex = width;
 
-    private int p1_move;
-    private int p2_move;
-
     public bool gameOver = false;
-    private enum Moves {ROCK, PAPER, SCISSORS, NOMOVE};
+    private enum Moves {NOMOVE, ROCK, PAPER, SCISSORS};
+
+    private bool acceptingInputs = false;
+    private bool endOfTurn = false;
+    private int p1_move = 0;   // dummy: "player 1 hasn't made a move yet"
+    private int p2_move = 0;   // dummy: "player 2 hasn't made a move yet"
 
     // player 1 input = row, player 2 input = col
-    private int[,] gameLogic = {{ 0,-1, 1, 1},
+    private int[,] gameLogic = {{ 0,-1,-1,-1},
                                 { 1, 0,-1, 1},
-                                {-1, 1, 0, 1},
-                                {-1,-1,-1, 0}};
+                                { 1, 1, 0,-1},
+                                { 1,-1, 1, 0}};
 
     // /////////////////////////////// //
 
@@ -43,45 +45,47 @@ public class GameManager : MonoBehaviour {
     }
 
 	void Update () {
-        if(Input.GetKeyDown("v") && !gameOver) { // DEBUG (game should proceed automatically, move after move)
+        if(Input.GetKeyDown("v") && !gameOver && timerScript.time == 0f) { // DEBUG (game should proceed automatically, move after move)
+            // start the timer
+            // while the timer is ticking down, accept player input
+            // detect player 1 input
+            //      was it on time?  what move did they choose?
+            // generate input for player 2
+            // after player 1 gives an input, or after the timer runs out:
+            //      calculate and display the result
+            //      end the turn
             Debug.Log("ROUND STARTED!");
-            PromptForMoves();
+            timer.SetActive(true);
+            acceptingInputs = true;
+        }
+        while(acceptingInputs) {
+            StartCoroutine(PromptForMoves());
+            acceptingInputs = false;
+        }
+        if(endOfTurn) {
+            StopAllCoroutines();    // dangerous.  but it works.
+            EndTurn();
+            Debug.Log("ROUND ENDED!");
+            endOfTurn = false;
             CheckForWin();
         }
-        /*// DEBUG - testing player movement across the screen
-        if(Input.GetKeyDown("z"))
-        {
-            MovePlayersLeft();
-        }
-        if(Input.GetKeyDown("x"))
-        {
-            MovePlayersRight();
-        }
-        */
 	}
 
-    void PromptForMoves() {
-        // start the timer
-        // as the timer is ticking down, continuously accept player input
-        // detect player 1 input
-        //      was it on time?  what move did they choose?
-        //      if not AI: also detect player 2 input
-        // if AI: generate input for player 2
-        // calculate and display the result
-        // end the turn
-        timer.SetActive(true);
-
-        if (timerScript.time != 0f)  {
-            p1_move = playerOneScript.GetMove();
-            // judge the move's time here: was it before the draw?  after?
-            // player 2 would go here too, if not using AI
+    private IEnumerator PromptForMoves() {
+        // TODO
+        // this function should block the round from progressing until:
+        //      - player 1 provides an input, or:
+        //      - the timer runs out.
+        while(true) {
+            yield return new WaitForSecondsRealtime(5);
+            Debug.Log("This printed 5 seconds after the timer started.");
+            p2_move = playerTwoScript.GetMove();
+            endOfTurn = true;
         }
-        
-        p2_move = playerTwoScript.GetMove();
-        Debug.Log("Player 2 just played their move!");
+    }
 
+    private void EndTurn() {        
         int result = ResolveMove(p1_move, p2_move);
-
         switch (result) {
             case -1:
                 // if player 2 wins, move both players left
@@ -99,10 +103,11 @@ public class GameManager : MonoBehaviour {
                 MovePlayersRight();
                 break;
         }
+        
     }
 
     private int ResolveMove(int p1, int p2) {
-        // returns -1 if player 2 wins, 0 if tie, and 1 if player 1 wins
+        // returns -1 if player 1 wins, 0 if tie, and 1 if player 1 wins
         string s = string.Format("Player 1: {0}, Player 2: {1}", p1, p2);
         Debug.Log(s);
         return gameLogic[p1,p2];

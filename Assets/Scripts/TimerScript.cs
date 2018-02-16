@@ -8,7 +8,7 @@ public class TimerScript : MonoBehaviour {
 	private IEnumerator StartCountdown() {
 		while(time > 0) {
 			time -= 0.1f;
-			yield return new WaitForSeconds(0.1f);
+			yield return new WaitForSecondsRealtime(0.1f);
 		}
         gameObject.SetActive(false);
 	}
@@ -20,6 +20,7 @@ public class TimerScript : MonoBehaviour {
 
 	void OnDisable() {
 		time = 0f;
+		StopCoroutine("StartCountdown");
 	}
 	
 }
