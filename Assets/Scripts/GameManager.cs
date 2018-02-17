@@ -12,11 +12,13 @@ public class GameManager : MonoBehaviour {
     public GameObject exclamationPoint;
     public GameObject timer;
     public GameObject inputManager;
+    private AudioSource AudioManager;
 
     private PlayerScript playerOneScript;
     private AIScript playerTwoScript;
     private TimerScript timerScript;
     private InputScript iScript;
+    public AudioClip RoundBeginSound;
 
     public float movementMultiplier = 2;
     public int playerOneIndex = width - 1;
@@ -30,6 +32,7 @@ public class GameManager : MonoBehaviour {
     public bool gameOver = false;
     private bool acceptingInputs = false;
     private bool endOfTurn = false;
+    private bool showMessage = true;   // used for debug control display UI
 
     private enum Moves {NOMOVE, ROCK, PAPER, SCISSORS};
     private int p1_move = 0;   // dummy: "player 1 hasn't made a move yet"
@@ -46,6 +49,7 @@ public class GameManager : MonoBehaviour {
     private void Awake() {
         gameBoard[playerOneIndex] = playerOne;
         gameBoard[playerTwoIndex] = playerTwo;
+        AudioManager = GetComponent<AudioSource>();
         playerOneScript = playerOne.GetComponent<PlayerScript>();
         playerTwoScript = playerTwo.GetComponent<AIScript>();   // CHANGE ME LATER!!!  MAYBE!! (idk multiplayer looks scary)
         timerScript = timer.GetComponent<TimerScript>();
@@ -63,29 +67,32 @@ public class GameManager : MonoBehaviour {
             // after player 1 gives an input, or after the timer runs out:
             //      calculate and display the result
             //      end the turn
+            showMessage = false;
             Debug.Log("--------ROUND STARTED!--------");
-            currentRoundTime = Random.Range(minTime, maxTime);
             HideGraphics();
             p1_move = p2_move = 0;
+ 
+            AudioManager.PlayOneShot(RoundBeginSound);
+ 
+            currentRoundTime = Random.Range(minTime, maxTime) + RoundBeginSound.length;
             timerScript.setTime(currentRoundTime);
             timer.SetActive(true);
             acceptingInputs = true;
         }
         while(acceptingInputs) {
-            // new strategy: enable a separate InputManager object?
             StartCoroutine(Anticipation( currentRoundTime ));            
             acceptingInputs = false;
         }
         if(endOfTurn) {
             StopAllCoroutines();    // dangerous.  but it works.
             inputManager.SetActive(false);
-            playerOneScript.ShowMoveGraphic(p1_move); playerTwoScript.ShowMoveGraphic(p2_move);
-            exclamationPoint.SetActive(false);
+            playerOneScript.ShowMoveGraphic(p1_move); playerTwoScript.ShowMoveGraphic(p2_move); exclamationPoint.SetActive(false);
             EndTurn();
             p1_move = p2_move = 0;
             Debug.Log("--------ROUND ENDED!--------");
             endOfTurn = false;
             CheckForWin();
+            showMessage = true;
         }
 	}
 
@@ -173,8 +180,9 @@ public class GameManager : MonoBehaviour {
     }
 
     void OnGUI() {
-        //GUI.skin.label.fontSize = GUI.skin.box.fontSize = GUI.skin.button.fontSize = 40;
+        GUI.skin.label.fontSize = GUI.skin.box.fontSize = GUI.skin.button.fontSize = 40;
 
-        //GUI.Box(new Rect(20,20,300,80), timerScript.time.ToString());
+        if(showMessage)
+            GUI.Box(new Rect(20,20,800,60), "Press V to start a round!");
 	}
 }
