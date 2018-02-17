@@ -21,24 +21,27 @@ public class GameManager : MonoBehaviour {
     public AudioClip RoundBeginSound;
 
     public float movementMultiplier = 2;
-    public int playerOneIndex = width - 1;
-    public int playerTwoIndex = width;
+    private int playerOneIndex = width - 1;
+    private int playerTwoIndex = width;
 
     public float minTime = 2.0f;
-    public float maxTime = 7.0f;
+    public float maxTime = 5.0f;
     public float reactionTime = 1.0f;
     private float currentRoundTime;
 
-    public bool gameOver = false;
+    private bool gameOver = false;
     private bool acceptingInputs = false;
     private bool endOfTurn = false;
     private bool showMessage = true;   // used for debug control display UI
 
-    private enum Moves {NOMOVE, ROCK, PAPER, SCISSORS};
     private int p1_move = 0;   // dummy: "player 1 hasn't made a move yet"
     private int p2_move = 0;   // dummy: "player 2 hasn't made a move yet"
 
-    // player 1 input = row, player 2 input = col
+    // player 1 input: row
+    // player 2 input: col
+    // Indices -  0: no move   |   1: rock   |   2: paper   |   3: scissors
+    // Values  - -1: player 1 loses   |   0: tie   |   1: player 1 wins
+    // example: gameLogic[2,3] = -1  -->  Player 1 played paper, player 2 played scissors, player 1 loses.
     private int[,] gameLogic = {{ 0,-1,-1,-1},
                                 { 1, 0,-1, 1},
                                 { 1, 1, 0,-1},
@@ -67,14 +70,18 @@ public class GameManager : MonoBehaviour {
             // after player 1 gives an input, or after the timer runs out:
             //      calculate and display the result
             //      end the turn
+
+            // TODO: the player isn't penalized for being too quick on the draw.
+            //          if input is received during Anticipation(), player 1's move is NOMOVE.
             showMessage = false;
             Debug.Log("--------ROUND STARTED!--------");
-            HideGraphics();
-            p1_move = p2_move = 0;
+            HideGraphics();         // hide all graphics on screen except for the players
+            p1_move = p2_move = 0;  // reset the players' moves to "nothing" as default
  
             AudioManager.PlayOneShot(RoundBeginSound);
  
             currentRoundTime = Random.Range(minTime, maxTime) + RoundBeginSound.length;
+            // The length of RoundBeginSound is ~4 seconds.
             timerScript.setTime(currentRoundTime);
             timer.SetActive(true);
             acceptingInputs = true;
@@ -84,23 +91,16 @@ public class GameManager : MonoBehaviour {
             acceptingInputs = false;
         }
         if(endOfTurn) {
-            StopAllCoroutines();    // dangerous.  but it works.
-            inputManager.SetActive(false);
-            playerOneScript.ShowMoveGraphic(p1_move); playerTwoScript.ShowMoveGraphic(p2_move); exclamationPoint.SetActive(false);
-            EndTurn();
-            p1_move = p2_move = 0;
+            StopAllCoroutines();            // dangerous.  but it works.
+            inputManager.SetActive(false);  // stop accepting input
+            EndTurnGraphics();
+            EndTurn();                      // resolve the players' moves
             Debug.Log("--------ROUND ENDED!--------");
             endOfTurn = false;
             CheckForWin();
-            showMessage = true;
+            showMessage = true;             // bring the UI back bby
         }
 	}
-
-    private void HideGraphics() {
-        exclamationPoint.SetActive(false);
-        playerOneScript.HideMoveGraphic();
-        playerTwoScript.HideMoveGraphic();
-    }
 
     private IEnumerator Anticipation(float seconds) {
         while(true) {
@@ -108,11 +108,11 @@ public class GameManager : MonoBehaviour {
             yield return new WaitForSecondsRealtime(seconds);
             exclamationPoint.SetActive(true);
             inputManager.SetActive(true);
-            StartCoroutine(PromptForMoves(reactionTime));
+            StartCoroutine(GetInputs(reactionTime));    // reactionTime is.... a global variable. :I
         }
     }
 
-    private IEnumerator PromptForMoves(float seconds) {
+    private IEnumerator GetInputs(float seconds) {
         while(true) {
             //Debug.Log("NOW!");
             p1_move = iScript.move;
@@ -120,6 +120,18 @@ public class GameManager : MonoBehaviour {
             yield return new WaitForSecondsRealtime(seconds);
             endOfTurn = true;
         }
+    }
+
+    private void HideGraphics() {
+        exclamationPoint.SetActive(false);
+        playerOneScript.HideMoveGraphic();
+        playerTwoScript.HideMoveGraphic();
+    }
+
+    private void EndTurnGraphics() {
+        playerOneScript.ShowMoveGraphic(p1_move);
+        playerTwoScript.ShowMoveGraphic(p2_move);
+        exclamationPoint.SetActive(false);
     }
 
     private void EndTurn() {
@@ -145,13 +157,13 @@ public class GameManager : MonoBehaviour {
 
     private int ResolveMove(int p1, int p2) {
         // returns -1 if player 1 wins, 0 if tie, and 1 if player 1 wins
-        string s = string.Format("---- END RESULTS: Player 1: {0}, Player 2: {1}", p1, p2);
+        string s = string.Format("---- ROUND RESULTS: Player 1: {0}, Player 2: {1}", p1, p2);
         Debug.Log(s);
         return gameLogic[p1,p2];
     }
 
     void MovePlayersLeft() {
-        if(playerOneIndex > 0) {  // bounds checking weee
+        if(playerOneIndex > 0) {
             gameBoard[playerOneIndex-1] = gameBoard[playerOneIndex--];
             gameBoard[playerTwoIndex-1] = gameBoard[playerTwoIndex--];
             playerOne.transform.Translate(new Vector3(-movementMultiplier, 0, 0));
@@ -160,7 +172,7 @@ public class GameManager : MonoBehaviour {
     }
 
     void MovePlayersRight() {
-        if(playerTwoIndex < (width*2)-1) {  // bounds checking weee
+        if(playerTwoIndex < (width*2)-1) {
             gameBoard[playerOneIndex+1] = gameBoard[playerOneIndex++];
             gameBoard[playerTwoIndex+1] = gameBoard[playerTwoIndex++];
             playerOne.transform.Translate(new Vector3(movementMultiplier, 0, 0));
@@ -180,9 +192,12 @@ public class GameManager : MonoBehaviour {
     }
 
     void OnGUI() {
+        // Debug UI.  Probably not gonna be in final build.
         GUI.skin.label.fontSize = GUI.skin.box.fontSize = GUI.skin.button.fontSize = 40;
 
-        if(showMessage)
+        if(showMessage) {
             GUI.Box(new Rect(20,20,800,60), "Press V to start a round!");
+            GUI.Box(new Rect(20,100,400,180), "Q - Rock\nW - Paper\nE - Scissors");
+        }
 	}
 }
