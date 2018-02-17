@@ -11,4 +11,15 @@ public class AIScript : MonoBehaviour {
 		// 3: scissors
 		return Random.Range(0,4);	// basic AI
 	}
+
+	public void ShowMoveGraphic(int move) {
+		transform.GetChild(move).gameObject.SetActive(true);
+	}
+
+	public void HideMoveGraphic() {
+		transform.GetChild(0).gameObject.SetActive(false);
+		transform.GetChild(1).gameObject.SetActive(false);
+		transform.GetChild(2).gameObject.SetActive(false);
+		transform.GetChild(3).gameObject.SetActive(false);
+	}
 }

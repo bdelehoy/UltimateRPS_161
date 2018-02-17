@@ -3,19 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerScript : MonoBehaviour {	
-	public int move = 0;
+	public void ShowMoveGraphic(int move) {
+		transform.GetChild(move).gameObject.SetActive(true);
+	}
 
-	//public IEnumerator GetMove() {
-	public int GetMove() {
-		if(Input.GetButtonDown("Rock1")) {
-			return 1;
-		}
-		if(Input.GetButtonDown("Paper1")) {
-			return 2;
-		}
-		if(Input.GetButtonDown("Scissors1")) {
-			return 3;
-		}
-		return 0;	// returns by default: problem.
+	public void HideMoveGraphic() {
+		transform.GetChild(0).gameObject.SetActive(false);
+		transform.GetChild(1).gameObject.SetActive(false);
+		transform.GetChild(2).gameObject.SetActive(false);
+		transform.GetChild(3).gameObject.SetActive(false);
 	}
 }

@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour {
 
     public GameObject playerOne;
     public GameObject playerTwo;
+    public GameObject exclamationPoint;
     public GameObject timer;
     public GameObject inputManager;
 
@@ -64,6 +65,7 @@ public class GameManager : MonoBehaviour {
             //      end the turn
             Debug.Log("--------ROUND STARTED!--------");
             currentRoundTime = Random.Range(minTime, maxTime);
+            HideGraphics();
             p1_move = p2_move = 0;
             timerScript.setTime(currentRoundTime);
             timer.SetActive(true);
@@ -77,17 +79,27 @@ public class GameManager : MonoBehaviour {
         if(endOfTurn) {
             StopAllCoroutines();    // dangerous.  but it works.
             inputManager.SetActive(false);
+            playerOneScript.ShowMoveGraphic(p1_move); playerTwoScript.ShowMoveGraphic(p2_move);
+            exclamationPoint.SetActive(false);
             EndTurn();
+            p1_move = p2_move = 0;
             Debug.Log("--------ROUND ENDED!--------");
             endOfTurn = false;
             CheckForWin();
         }
 	}
 
+    private void HideGraphics() {
+        exclamationPoint.SetActive(false);
+        playerOneScript.HideMoveGraphic();
+        playerTwoScript.HideMoveGraphic();
+    }
+
     private IEnumerator Anticipation(float seconds) {
         while(true) {
-            Debug.Log("Waiting....");
+            //Debug.Log("Waiting....");
             yield return new WaitForSecondsRealtime(seconds);
+            exclamationPoint.SetActive(true);
             inputManager.SetActive(true);
             StartCoroutine(PromptForMoves(reactionTime));
         }
@@ -95,11 +107,10 @@ public class GameManager : MonoBehaviour {
 
     private IEnumerator PromptForMoves(float seconds) {
         while(true) {
-            Debug.Log("NOW!");
+            //Debug.Log("NOW!");
             p1_move = iScript.move;
             p2_move = playerTwoScript.GetMove();
             yield return new WaitForSecondsRealtime(seconds);
-            // display "!" graphic
             endOfTurn = true;
         }
     }
@@ -123,12 +134,11 @@ public class GameManager : MonoBehaviour {
                 MovePlayersRight();
                 break;
         }
-        
     }
 
     private int ResolveMove(int p1, int p2) {
         // returns -1 if player 1 wins, 0 if tie, and 1 if player 1 wins
-        string s = string.Format("Player 1: {0}, Player 2: {1}", p1, p2);
+        string s = string.Format("---- END RESULTS: Player 1: {0}, Player 2: {1}", p1, p2);
         Debug.Log(s);
         return gameLogic[p1,p2];
     }
@@ -163,8 +173,8 @@ public class GameManager : MonoBehaviour {
     }
 
     void OnGUI() {
-        GUI.skin.label.fontSize = GUI.skin.box.fontSize = GUI.skin.button.fontSize = 40;
+        //GUI.skin.label.fontSize = GUI.skin.box.fontSize = GUI.skin.button.fontSize = 40;
 
-        GUI.Box(new Rect(20,20,300,80), timerScript.time.ToString());
+        //GUI.Box(new Rect(20,20,300,80), timerScript.time.ToString());
 	}
 }

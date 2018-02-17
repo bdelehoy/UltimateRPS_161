@@ -22,7 +22,8 @@ public class InputScript : MonoBehaviour {
 	}
 
 	void OnEnable() {
-		Debug.Log("GO AHEAD AND GIVE INPUTS");
+		//Debug.Log("GO AHEAD AND GIVE INPUTS");
+		move = 0;
 	}
 
 }
