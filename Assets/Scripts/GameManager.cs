@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour {
     public GameObject p2Sign;
     public GameObject timer;
     public GameObject inputManager;
+    public GameObject pauseManager;
     private AudioSource AudioManager;
     private Animator playerOneAnimator;
     private Animator playerTwoAnimator;
@@ -38,7 +39,7 @@ public class GameManager : MonoBehaviour {
     private bool gameOver = false;
     private bool acceptingInputs = false;
     private bool endOfTurn = false;
-    private bool showMessage = true;   // used for debug control display UI
+    public bool showMessage = true;   // used for debug control display UI
 
     private int p1_move = 0;   // dummy: "player 1 hasn't made a move yet"
     private int p2_move = 0;   // dummy: "player 2 hasn't made a move yet"
@@ -55,7 +56,7 @@ public class GameManager : MonoBehaviour {
 
     ///////////////////////////////////
 
-    private void Awake() {
+    private void Start() {
         gameBoard[playerOneIndex] = playerOne;
         gameBoard[playerTwoIndex] = playerTwo;
         AudioManager = GetComponent<AudioSource>();
@@ -65,6 +66,7 @@ public class GameManager : MonoBehaviour {
         playerTwoAnimator = playerTwo.GetComponent<Animator>();
         timerScript = timer.GetComponent<TimerScript>();
         iScript = inputManager.GetComponent<InputScript>();
+        Time.timeScale = 1;
         //Debug.Log("Press V to start accepting input....");
     }
 
@@ -104,7 +106,6 @@ public class GameManager : MonoBehaviour {
             StopAllCoroutines();            // dangerous.  but it works.
             inputManager.SetActive(false);  // stop accepting input
             EndTurnGraphics();
-            //StartCoroutine(TimingBuffer(5.0f));
             EndTurn();                      // resolve the players' moves
             Debug.Log("--------ROUND ENDED!--------");
             endOfTurn = false;
@@ -115,7 +116,7 @@ public class GameManager : MonoBehaviour {
 	}
 
     private IEnumerator Anticipation(float seconds) {
-        while(true) {
+        while(true && !pauseManager.activeInHierarchy) {
             //Debug.Log("Waiting....");
             yield return new WaitForSecondsRealtime(seconds);
             exclamationPoint.SetActive(true);
@@ -125,7 +126,7 @@ public class GameManager : MonoBehaviour {
     }
 
     private IEnumerator TimingBuffer(float seconds){
-        while (true)
+        while (true && !pauseManager.activeInHierarchy)
         {
             yield return new WaitForSeconds(seconds);
             roundActive = true;
@@ -134,7 +135,7 @@ public class GameManager : MonoBehaviour {
     }
 
     private IEnumerator GetInputs(float seconds) {
-        while(true) {
+        while(true && !pauseManager.activeInHierarchy) {
             //Debug.Log("NOW!");
             p1_move = iScript.move;
             p2_move = playerTwoScript.GetMove();
@@ -162,7 +163,7 @@ public class GameManager : MonoBehaviour {
 
     private IEnumerator WaitAnimation(Animator animator)
     {
-        while (true)
+        while (true && !pauseManager.activeInHierarchy)
         {
             //Debug.Log("one animation cycle");
             yield return new WaitForSecondsRealtime(animator.GetCurrentAnimatorStateInfo(0).length); // + animator.GetCurrentAnimatorStateInfo(0).normalizedTime);
