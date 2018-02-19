@@ -10,9 +10,15 @@ public class GameManager : MonoBehaviour {
     public GameObject playerOne;
     public GameObject playerTwo;
     public GameObject exclamationPoint;
+    public GameObject winnerSign;
+    public GameObject p1Sign;
+    public GameObject p2Sign;
     public GameObject timer;
     public GameObject inputManager;
     private AudioSource AudioManager;
+    private Animator playerOneAnimator;
+    private Animator playerTwoAnimator;
+    private bool roundActive = true;
 
     private PlayerScript playerOneScript;
     private AIScript playerTwoScript;
@@ -24,8 +30,8 @@ public class GameManager : MonoBehaviour {
     private int playerOneIndex = width - 1;
     private int playerTwoIndex = width;
 
-    public float minTime = 2.0f;
-    public float maxTime = 5.0f;
+    public float minTime = 1.0f;
+    public float maxTime = 3.0f;
     public float reactionTime = 1.0f;
     private float currentRoundTime;
 
@@ -55,13 +61,15 @@ public class GameManager : MonoBehaviour {
         AudioManager = GetComponent<AudioSource>();
         playerOneScript = playerOne.GetComponent<PlayerScript>();
         playerTwoScript = playerTwo.GetComponent<AIScript>();   // CHANGE ME LATER!!!  MAYBE!! (idk multiplayer looks scary)
+        playerOneAnimator = playerOne.GetComponent<Animator>();
+        playerTwoAnimator = playerTwo.GetComponent<Animator>();
         timerScript = timer.GetComponent<TimerScript>();
         iScript = inputManager.GetComponent<InputScript>();
-        Debug.Log("Press V to start accepting input....");
+        //Debug.Log("Press V to start accepting input....");
     }
 
 	void Update () {
-        if(Input.GetKeyDown("v") && !gameOver && timerScript.time == 0f) { // DEBUG (game should proceed automatically, move after move)
+        if(/*Input.GetKeyDown("v") &&*/ roundActive && !gameOver && timerScript.time == 0f) { // DEBUG (game should proceed automatically, move after move)
             // start the timer
             // while the timer is ticking down, accept player input
             // detect player 1 input
@@ -73,9 +81,10 @@ public class GameManager : MonoBehaviour {
 
             // TODO: the player isn't penalized for being too quick on the draw.
             //          if input is received during Anticipation(), player 1's move is NOMOVE.
-            showMessage = false;
+            //showMessage = false;
             Debug.Log("--------ROUND STARTED!--------");
             HideGraphics();         // hide all graphics on screen except for the players
+            ResetAnimationBools();  // reset animation bools
             p1_move = p2_move = 0;  // reset the players' moves to "nothing" as default
  
             AudioManager.PlayOneShot(RoundBeginSound);
@@ -91,14 +100,17 @@ public class GameManager : MonoBehaviour {
             acceptingInputs = false;
         }
         if(endOfTurn) {
+            roundActive = false;
             StopAllCoroutines();            // dangerous.  but it works.
             inputManager.SetActive(false);  // stop accepting input
             EndTurnGraphics();
+            //StartCoroutine(TimingBuffer(5.0f));
             EndTurn();                      // resolve the players' moves
             Debug.Log("--------ROUND ENDED!--------");
             endOfTurn = false;
             CheckForWin();
-            showMessage = true;             // bring the UI back bby
+            StartCoroutine(TimingBuffer(2.0f));
+            showMessage = false;             // bring the UI back bby
         }
 	}
 
@@ -109,6 +121,15 @@ public class GameManager : MonoBehaviour {
             exclamationPoint.SetActive(true);
             inputManager.SetActive(true);
             StartCoroutine(GetInputs(reactionTime));    // reactionTime is.... a global variable. :I
+        }
+    }
+
+    private IEnumerator TimingBuffer(float seconds){
+        while (true)
+        {
+            yield return new WaitForSeconds(seconds);
+            roundActive = true;
+            Debug.Log("buffer over");
         }
     }
 
@@ -128,9 +149,134 @@ public class GameManager : MonoBehaviour {
         playerTwoScript.HideMoveGraphic();
     }
 
+    private void ResetAnimationBools() {
+        playerOneAnimator.SetBool("Punch", false);
+        playerOneAnimator.SetBool("Kick", false);
+        playerOneAnimator.SetBool("Fireball", false);
+        playerOneAnimator.SetBool("Hurt", false);
+        playerTwoAnimator.SetBool("Punch", false);
+        playerTwoAnimator.SetBool("Kick", false);
+        playerTwoAnimator.SetBool("Fireball", false);
+        playerTwoAnimator.SetBool("Hurt", false);
+    }
+
+    private IEnumerator WaitAnimation(Animator animator)
+    {
+        while (true)
+        {
+            //Debug.Log("one animation cycle");
+            yield return new WaitForSecondsRealtime(animator.GetCurrentAnimatorStateInfo(0).length); // + animator.GetCurrentAnimatorStateInfo(0).normalizedTime);
+            ResetAnimationBools();
+            //Debug.Log("animation over");
+        }
+    }
+
     private void EndTurnGraphics() {
+
+        // p1 win checks
+        if (p1_move == 1 && p2_move == 3) {
+            playerOneAnimator.SetBool("Punch", true);
+            playerTwoAnimator.SetBool("Hurt", true);
+        }
+            
+        if (p1_move == 2 && p2_move == 1) {
+            playerOneAnimator.SetBool("Kick", true);
+            playerTwoAnimator.SetBool("Hurt", true);
+        }
+
+        if (p1_move == 3 && p2_move == 2)
+        {
+            playerOneAnimator.SetBool("Fireball", true);
+            playerTwoAnimator.SetBool("Hurt", true);
+        }
+
+        // p2 win checks
+        if (p2_move == 1 && p1_move == 3)
+        {
+            playerTwoAnimator.SetBool("Punch", true);
+            playerOneAnimator.SetBool("Hurt", true);
+        }
+
+        if (p2_move == 2 && p1_move == 1)
+        {
+            playerTwoAnimator.SetBool("Kick", true);
+            playerOneAnimator.SetBool("Hurt", true);
+        }
+
+        if (p2_move == 3 && p1_move == 2)
+        {
+            playerTwoAnimator.SetBool("Fireball", true);
+            playerOneAnimator.SetBool("Hurt", true);
+        }
+
+        // same checks
+        if (p2_move == 1 && p1_move == 1)
+        {
+            playerTwoAnimator.SetBool("Punch", true);
+            playerOneAnimator.SetBool("Punch", true);
+        }
+
+        if (p2_move == 2 && p1_move == 2)
+        {
+            playerTwoAnimator.SetBool("Kick", true);
+            playerOneAnimator.SetBool("Kick", true);
+        }
+
+        if (p2_move == 3 && p1_move == 3)
+        {
+            playerTwoAnimator.SetBool("Fireball", true);
+            playerOneAnimator.SetBool("Fireball", true);
+        }
+
+        // null checks
+        if (p1_move == 1 && p2_move == 0)
+        {
+            playerOneAnimator.SetBool("Punch", true);
+            playerTwoAnimator.SetBool("Hurt", true);
+        }
+
+        if (p1_move == 2 && p2_move == 0)
+        {
+            playerOneAnimator.SetBool("Kick", true);
+            playerTwoAnimator.SetBool("Hurt", true);
+        }
+
+        if (p1_move == 3 && p2_move == 0)
+        {
+            playerOneAnimator.SetBool("Fireball", true);
+            playerTwoAnimator.SetBool("Hurt", true);
+        }
+
+        if (p2_move == 1 && p1_move == 0)
+        {
+            playerTwoAnimator.SetBool("Punch", true);
+            playerOneAnimator.SetBool("Hurt", true);
+        }
+
+        if (p2_move == 2 && p1_move == 0)
+        {
+            playerTwoAnimator.SetBool("Kick", true);
+            playerOneAnimator.SetBool("Hurt", true);
+        }
+
+        if (p2_move == 3 && p1_move == 0)
+        {
+            playerTwoAnimator.SetBool("Fireball", true);
+            playerOneAnimator.SetBool("Hurt", true);
+        }
+
+        if (p2_move == 0 && p1_move == 0)
+        {
+            // do nothing
+        }
+
+
+        StartCoroutine(WaitAnimation(playerOneAnimator));
+        //StartCoroutine(WaitAnimation(playerTwoAnimator));
+
         playerOneScript.ShowMoveGraphic(p1_move);
         playerTwoScript.ShowMoveGraphic(p2_move);
+
         exclamationPoint.SetActive(false);
     }
 
@@ -166,6 +312,9 @@ public class GameManager : MonoBehaviour {
         if(playerOneIndex > 0) {
             gameBoard[playerOneIndex-1] = gameBoard[playerOneIndex--];
             gameBoard[playerTwoIndex-1] = gameBoard[playerTwoIndex--];
+            //playerOne.transform.position = Vector3.Lerp(playerOne.transform.position, new Vector3(playerOne.transform.position.x - movementMultiplier, 0, 0), Time.deltaTime * 50);
+            //playerTwo.transform.position = Vector3.Lerp(playerTwo.transform.position, new Vector3(playerTwo.transform.position.x - movementMultiplier, 0, 0), Time.deltaTime * 50);
+
             playerOne.transform.Translate(new Vector3(-movementMultiplier, 0, 0));
             playerTwo.transform.Translate(new Vector3(-movementMultiplier, 0, 0));
         }
@@ -175,6 +324,9 @@ public class GameManager : MonoBehaviour {
         if(playerTwoIndex < (width*2)-1) {
             gameBoard[playerOneIndex+1] = gameBoard[playerOneIndex++];
             gameBoard[playerTwoIndex+1] = gameBoard[playerTwoIndex++];
+            //playerOne.transform.position = Vector3.Lerp(playerOne.transform.position, new Vector3(playerOne.transform.position.x + movementMultiplier, 0, 0), Time.deltaTime * 50);
+            //playerTwo.transform.position = Vector3.Lerp(playerTwo.transform.position, new Vector3(playerTwo.transform.position.x + movementMultiplier, 0, 0), Time.deltaTime * 50);
+            
             playerOne.transform.Translate(new Vector3(movementMultiplier, 0, 0));
             playerTwo.transform.Translate(new Vector3(movementMultiplier, 0, 0));
         }
@@ -184,10 +336,18 @@ public class GameManager : MonoBehaviour {
         if(playerOneIndex == 0) {
             Debug.Log("Player two wins the game!");
             gameOver = true;
+            playerTwoAnimator.SetBool("WinState", true);
+            playerOneAnimator.SetBool("LoseState", true);
+            winnerSign.SetActive(true);
+            p2Sign.SetActive(true);
         }
         if(playerTwoIndex == (width*2)-1) {
             Debug.Log("Player one wins the game!");
             gameOver = true;
+            playerOneAnimator.SetBool("WinState", true);
+            playerTwoAnimator.SetBool("LoseState", true);
+            winnerSign.SetActive(true);
+            p1Sign.SetActive(true);
         }
     }
 
@@ -196,7 +356,7 @@ public class GameManager : MonoBehaviour {
         GUI.skin.label.fontSize = GUI.skin.box.fontSize = GUI.skin.button.fontSize = 40;
 
         if(showMessage) {
-            GUI.Box(new Rect(20,20,800,60), "Press V to start a round!");
+            GUI.Box(new Rect(20,20,800,60), "WAIT FOR THE SIGNAL");
             GUI.Box(new Rect(20,100,400,180), "Q - Rock\nW - Paper\nE - Scissors");
         }
 	}
