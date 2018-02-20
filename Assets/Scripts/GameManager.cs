@@ -21,6 +21,8 @@ public class GameManager : MonoBehaviour {
     private Animator playerTwoAnimator;
     private bool roundActive = true;
 
+    private bool showTimer = false;          // D E B U G, set to false before building
+
     private PlayerScript playerOneScript;
     private AIScript playerTwoScript;
     private TimerScript timerScript;
@@ -39,7 +41,7 @@ public class GameManager : MonoBehaviour {
     private bool gameOver = false;
     private bool acceptingInputs = false;
     private bool endOfTurn = false;
-    public bool showMessage = true;   // used for debug control display UI
+    public bool showMessage = true;
 
     private int p1_move = 0;   // dummy: "player 1 hasn't made a move yet"
     private int p2_move = 0;   // dummy: "player 2 hasn't made a move yet"
@@ -66,12 +68,12 @@ public class GameManager : MonoBehaviour {
         playerTwoAnimator = playerTwo.GetComponent<Animator>();
         timerScript = timer.GetComponent<TimerScript>();
         iScript = inputManager.GetComponent<InputScript>();
-        Time.timeScale = 1;
+        Time.timeScale = 1.0f;
         //Debug.Log("Press V to start accepting input....");
     }
 
 	void Update () {
-        if(/*Input.GetKeyDown("v") &&*/ roundActive && !gameOver && timerScript.time == 0f) { // DEBUG (game should proceed automatically, move after move)
+        if(/*Input.GetKeyDown("v") &&*/ roundActive && !gameOver && timerScript.time == 0f) {
             // start the timer
             // while the timer is ticking down, accept player input
             // detect player 1 input
@@ -88,6 +90,8 @@ public class GameManager : MonoBehaviour {
             HideGraphics();         // hide all graphics on screen except for the players
             ResetAnimationBools();  // reset animation bools
             p1_move = p2_move = 0;  // reset the players' moves to "nothing" as default
+            iScript.playerReady = false;
+
  
             AudioManager.PlayOneShot(RoundBeginSound);
  
@@ -97,8 +101,9 @@ public class GameManager : MonoBehaviour {
             timer.SetActive(true);
             acceptingInputs = true;
         }
-        while(acceptingInputs) {
-            StartCoroutine(Anticipation( currentRoundTime ));            
+        if(acceptingInputs) {
+            StartCoroutine(Anticipation( currentRoundTime ));
+            inputManager.SetActive(true);
             acceptingInputs = false;
         }
         if(endOfTurn) {
@@ -110,36 +115,41 @@ public class GameManager : MonoBehaviour {
             Debug.Log("--------ROUND ENDED!--------");
             endOfTurn = false;
             CheckForWin();
-            StartCoroutine(TimingBuffer(2.0f));
-            showMessage = false;             // bring the UI back bby
+            StartCoroutine(TimingBuffer(2.0f)); // wait 2 seconds in between rounds
+            showMessage = false;            // hide the UI after every turn
         }
 	}
 
     private IEnumerator Anticipation(float seconds) {
         while(true && !pauseManager.activeInHierarchy) {
             //Debug.Log("Waiting....");
-            yield return new WaitForSecondsRealtime(seconds);
+            yield return new WaitForSeconds(seconds);
             exclamationPoint.SetActive(true);
-            inputManager.SetActive(true);
             StartCoroutine(GetInputs(reactionTime));    // reactionTime is.... a global variable. :I
         }
     }
 
     private IEnumerator TimingBuffer(float seconds){
-        while (true && !pauseManager.activeInHierarchy)
-        {
+        //while (true && !pauseManager.activeInHierarchy)
+        //{
             yield return new WaitForSeconds(seconds);
             roundActive = true;
             Debug.Log("buffer over");
-        }
+        //}
     }
 
     private IEnumerator GetInputs(float seconds) {
         while(true && !pauseManager.activeInHierarchy) {
             //Debug.Log("NOW!");
-            p1_move = iScript.move;
-            p2_move = playerTwoScript.GetMove();
-            yield return new WaitForSecondsRealtime(seconds);
+            iScript.playerReady = true;
+            if(p1_move == 0) {  // if player 1 didn't move before the prompt, their move should be 0 already
+                p1_move = iScript.move;
+            }
+            else {
+                p1_move = 0;
+            }
+            p2_move = playerTwoScript.GetMove();    // the AI should just generate a move at random
+            yield return new WaitForSeconds(seconds);
             endOfTurn = true;
         }
     }
@@ -359,6 +369,9 @@ public class GameManager : MonoBehaviour {
         if(showMessage) {
             GUI.Box(new Rect(20,20,800,60), "WAIT FOR THE SIGNAL");
             GUI.Box(new Rect(20,100,400,180), "Q - Rock\nW - Paper\nE - Scissors");
+        }
+        if(showTimer) {
+                GUI.Box(new Rect(20,300,800,60), timerScript.time.ToString());
         }
 	}
 }

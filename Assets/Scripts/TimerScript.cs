@@ -9,7 +9,7 @@ public class TimerScript : MonoBehaviour {
 	private IEnumerator StartCountdown() {
 		while(time > 0) {
 			time -= timeResolution;
-			yield return new WaitForSecondsRealtime(timeResolution);
+			yield return new WaitForSeconds(timeResolution);
 		}
         gameObject.SetActive(false);
 	}
