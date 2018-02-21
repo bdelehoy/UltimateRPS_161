@@ -368,7 +368,7 @@ public class GameManager : MonoBehaviour {
 
         if(showMessage) {
             GUI.Box(new Rect(20,20,800,60), "WAIT FOR THE SIGNAL");
-            GUI.Box(new Rect(20,100,400,180), "Q - Rock\nW - Paper\nE - Scissors");
+            GUI.Box(new Rect(20,100,400,240), "Q - Rock\nW - Paper\nE - Scissors\n\nESC - Pause");
         }
         if(showTimer) {
                 GUI.Box(new Rect(20,300,800,60), timerScript.time.ToString());
