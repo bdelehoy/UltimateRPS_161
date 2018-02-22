@@ -23,7 +23,7 @@ public class GameManager : MonoBehaviour {
     private bool p1_penalty = false;
     private bool showEndOfTurnText = false;
 
-    private bool showTimer = true;          // D E B U G, set to false before building
+    private bool showTimer = false;          // D E B U G, set to false before building
 
     private PlayerScript playerOneScript;
     private AIScript playerTwoScript;
