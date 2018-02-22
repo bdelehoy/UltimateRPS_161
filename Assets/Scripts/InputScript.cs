@@ -33,9 +33,9 @@ public class InputScript : MonoBehaviour {
 		}
 	}
 
-	private void PlaySounds() {
+	public void PlaySounds() {
 		if(!playerReady) {
-			feedbackManager.PlayOneShot(moveMiss);
+			//feedbackManager.PlayOneShot(moveMiss);
 		}
 		else {
 			feedbackManager.PlayOneShot(moveHit);

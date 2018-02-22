@@ -979,11 +979,13 @@ MonoBehaviour:
   inputManager: {fileID: 379093317}
   pauseManager: {fileID: 591962074}
   RoundBeginSound: {fileID: 8300000, guid: d88b92fce7e61d144b8f5312237de310, type: 3}
+  moveMiss: {fileID: 8300000, guid: 4082758b45486b2408dd938e6406c1a7, type: 3}
   movementMultiplier: 3
   minTime: 2
   maxTime: 7
   reactionTime: 1
   showMessage: 1
+  wep_triangle: {fileID: 2800000, guid: 7f665270b3d6ab4468e3c6e2230b65af, type: 3}
 --- !u!4 &401028056
 Transform:
   m_ObjectHideFlags: 0

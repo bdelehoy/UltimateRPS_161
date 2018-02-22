@@ -20,14 +20,17 @@ public class GameManager : MonoBehaviour {
     private Animator playerOneAnimator;
     private Animator playerTwoAnimator;
     private bool roundActive = true;
+    private bool p1_penalty = false;
+    private bool showEndOfTurnText = false;
 
-    private bool showTimer = false;          // D E B U G, set to false before building
+    private bool showTimer = true;          // D E B U G, set to false before building
 
     private PlayerScript playerOneScript;
     private AIScript playerTwoScript;
     private TimerScript timerScript;
     private InputScript iScript;
     public AudioClip RoundBeginSound;
+    public AudioClip moveMiss;
 
     public float movementMultiplier = 2;
     private int playerOneIndex = width - 1;
@@ -45,6 +48,8 @@ public class GameManager : MonoBehaviour {
 
     private int p1_move = 0;   // dummy: "player 1 hasn't made a move yet"
     private int p2_move = 0;   // dummy: "player 2 hasn't made a move yet"
+
+    public Texture wep_triangle;
 
     // player 1 input: row
     // player 2 input: col
@@ -69,11 +74,10 @@ public class GameManager : MonoBehaviour {
         timerScript = timer.GetComponent<TimerScript>();
         iScript = inputManager.GetComponent<InputScript>();
         Time.timeScale = 1.0f;
-        //Debug.Log("Press V to start accepting input....");
     }
 
 	void Update () {
-        if(/*Input.GetKeyDown("v") &&*/ roundActive && !gameOver && timerScript.time == 0f) {
+        if(roundActive && !gameOver && timerScript.time == 0f) {
             // start the timer
             // while the timer is ticking down, accept player input
             // detect player 1 input
@@ -83,16 +87,14 @@ public class GameManager : MonoBehaviour {
             //      calculate and display the result
             //      end the turn
 
-            // TODO: the player isn't penalized for being too quick on the draw.
-            //          if input is received during Anticipation(), player 1's move is NOMOVE.
             //showMessage = false;
             Debug.Log("--------ROUND STARTED!--------");
             HideGraphics();         // hide all graphics on screen except for the players
             ResetAnimationBools();  // reset animation bools
             p1_move = p2_move = 0;  // reset the players' moves to "nothing" as default
             iScript.playerReady = false;
+            p1_penalty = false;
 
- 
             AudioManager.PlayOneShot(RoundBeginSound);
  
             currentRoundTime = Random.Range(minTime, maxTime) + RoundBeginSound.length;
@@ -106,17 +108,36 @@ public class GameManager : MonoBehaviour {
             inputManager.SetActive(true);
             acceptingInputs = false;
         }
-        if(endOfTurn) {
-            roundActive = false;
-            StopAllCoroutines();            // dangerous.  but it works.
+        if(!iScript.playerReady && iScript.move != 0) {     // detecting if the player made a move before the draw: immediately end the turn
+            Debug.Log("Player 1 jumped the gun!");
+            AudioManager.PlayOneShot(moveMiss);
+            iScript.move = 0;
+            p1_penalty = true;
+
+            // WOW THIS IS SO MESSY BUT IT'S DUE IN LIKE 4 HOURS
+            p1_move = 0;
+            p2_move = playerTwoScript.GetMove();    // the AI should just generate a move at random
+
             inputManager.SetActive(false);  // stop accepting input
+            StopAllCoroutines();            // dangerous.  but it works.
             EndTurnGraphics();
             EndTurn();                      // resolve the players' moves
-            Debug.Log("--------ROUND ENDED!--------");
+            roundActive = false;
             endOfTurn = false;
             CheckForWin();
             StartCoroutine(TimingBuffer(2.0f)); // wait 2 seconds in between rounds
-            showMessage = false;            // hide the UI after every turn
+            timerScript.time = 0f;
+        }
+        if(endOfTurn) {
+            Debug.Log("--------ROUND ENDED!--------");
+            inputManager.SetActive(false);  // stop accepting input
+            StopAllCoroutines();            // dangerous.  but it works.
+            EndTurnGraphics();
+            EndTurn();                      // resolve the players' moves
+            roundActive = false;
+            endOfTurn = false;
+            CheckForWin();
+            StartCoroutine(TimingBuffer(2.0f)); // wait 2 seconds in between rounds
         }
 	}
 
@@ -132,17 +153,20 @@ public class GameManager : MonoBehaviour {
     private IEnumerator TimingBuffer(float seconds){
         //while (true && !pauseManager.activeInHierarchy)
         //{
+            Debug.Log("buffer started");
+            showEndOfTurnText = true;
             yield return new WaitForSeconds(seconds);
+            showEndOfTurnText = false;
             roundActive = true;
             Debug.Log("buffer over");
         //}
     }
 
-    private IEnumerator GetInputs(float seconds) {
+    private IEnumerator GetInputs(float seconds) {      // reaction time: 1 second by default
         while(true && !pauseManager.activeInHierarchy) {
             //Debug.Log("NOW!");
             iScript.playerReady = true;
-            if(p1_move == 0) {  // if player 1 didn't move before the prompt, their move should be 0 already
+            if(!p1_penalty) {  // if player 1 didn't move before the prompt, their move should be 0 already
                 p1_move = iScript.move;
             }
             else {
@@ -367,11 +391,15 @@ public class GameManager : MonoBehaviour {
         GUI.skin.label.fontSize = GUI.skin.box.fontSize = GUI.skin.button.fontSize = 40;
 
         if(showMessage) {
-            GUI.Box(new Rect(20,20,800,60), "WAIT FOR THE SIGNAL");
-            GUI.Box(new Rect(20,100,400,240), "Q - Rock\nW - Paper\nE - Scissors\n\nESC - Pause");
+            GUI.Box(new Rect(20,20,600,60), "WAIT FOR THE SIGNAL.");
+            GUI.Box(new Rect(20,100,400,240), "Q - Punch\nW - Kick\nE - Super\n\nESC - Pause");
+            GUI.DrawTexture(new Rect(1620, 20, 200, 200), wep_triangle);
         }
         if(showTimer) {
-                GUI.Box(new Rect(20,300,800,60), timerScript.time.ToString());
+            GUI.Box(new Rect(20,700,400,60), timerScript.time.ToString());
+        }
+        if(showEndOfTurnText) {
+            GUI.Box(new Rect(910,20,320,60), "Round over.");
         }
 	}
 }
